@@ -13,7 +13,7 @@ public class Simplex {
         private short[] Xb; // base's index
 
         Simplex(float[] equation, boolean maximize, float[][] constraint, short[] constInegality) {
-            this.equation = equation;
+            this.equation=equation;
             this.maximize = maximize;
             
             this.constraint=new ArrayList<>();
