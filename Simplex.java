@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
 
 public class Simplex {
         private List<Float> equation;
@@ -8,8 +7,7 @@ public class Simplex {
         private List<List<Float>> constraint;
         // 0:<; 1:<= ; 2:= ; 3:> ; 4:>=
         private final short[] constInegality; // array of inequality signs
-        private final float[] slack; // slack variables
-        private short pivot;
+        private  float[] solution; 
         private int[] Xb; // base's index
         private int[] Xn;//non base's index
         private float base[]; // base
@@ -33,12 +31,9 @@ public class Simplex {
             }
             this.constInegality = constInegality;
 
-            this.slack = new float[constInegality.length];
-            Arrays.fill(slack, 1);
-
-            this.pivot = 2;
-
             this.Xb = new int[constraint.length];
+
+            this.solution = new float[base.length];
 
             this.base=base;
         }
@@ -127,40 +122,91 @@ public class Simplex {
 
     private void setXn(){
         //Xn[]:non base's index
-        float min=equation.get(Xn[0]);
+        int min=Xn[0];
         for(int i=1;i<Xn.length ; i++){
-            if(equation.get(Xn[i])<min && equation.get(Xn[i])>=0){
-                min=equation.get(Xn[i]);
+            if(equation.get(Xn[i])<equation.get(min)){
+                min=i;
             }
         }
-        System.err.println(min+" entre en base");
+        System.err.println(equation.get(min)+" entre en base");
+
+         Xn[min]=setXb(min);
+
+         //min:indexOf pivot row
+         pivot(min, min);
 
     }
 
-    private void setXb(){
-        
+    private int setXb(int newBaseIndex){
+        float Min[]=new float[base.length];
+        for(int i=0 ; i<base.length; i++){
+            Min[i]=base[i]/constraint.get(i).get(newBaseIndex);
+        }
+        int  outOfBaseInd=0;
+        for(int i=1 ; i<Min.length; i++){
+            if(Min[i]<Min[outOfBaseInd] && Min[outOfBaseInd]>=0){
+                outOfBaseInd=i;
+            }
+        }
+        System.err.println(equation.get(outOfBaseInd)+ "sort de la base");
+
+        Xn[newBaseIndex]=outOfBaseInd;
+        return outOfBaseInd;
+
     }
+
+    //pRowInd:pivot row index
+    private void pivot(int pRowInd,int newBaseIndex){
+
+        float L;
+        L=-equation.get(newBaseIndex)/constraint.get(pRowInd).get(newBaseIndex);
+        for(int i=0; i<equation.size(); i++){
+            equation.set(i, equation.get(i)+constraint.get(pRowInd).get(i)*L);
+        }
+
+        L=1/constraint.get(0).get(newBaseIndex);
+        for(int i=0; i<constraint.get(0).size(); i++){
+           constraint.get(0).set(i,constraint.get(0).get(i)*L);
+        }
+        base[pRowInd-1]*=L;
+
+        for(int i=1 ; i<constraint.size(); i++){
+            L=constraint.get(i).get(newBaseIndex)/constraint.get(pRowInd).get(newBaseIndex);
+            for(int j = 0; j<constraint.get(0).size(); j++){
+                 constraint.get(i).set(j,constraint.get(i).get(j)*L);
+            }
+        }
+
+    }
+
     public void resolution(){
+        standardInit();
+        while (this.solution==null) {
+            this.solution=Cn();
+            setXn();
+            dispConstr();
+        }
+        System.out.println("Solution: " + this.solution[0]+" " + this.solution[1]);
 
     }
    
     public static void main(String[] args){
         // Sample data for testing
-        float[] equation = {8f, 8f};
+        float[] equation = {2f, 4f};
         boolean maximize = true;
         float[][] constraints = {
-            {2f, 1f},  
-            {1f, 1f},
-            {2f,2f}  
+            {3f, 4f},  
+            {2f, 5f},
+      
         };
-        short[] inequalitySigns = {1, 1 , 1}; 
+        short[] inequalitySigns = {1, 1 }; 
 
-        float base[]={2f , 4f , 5f};
+        float base[]={1700f , 1600f };
 
         Simplex simplex = new Simplex(equation, maximize, constraints, inequalitySigns,base);
-        
-        simplex.standardInit();
-        
-        simplex.dispConstr();
+
+        simplex.resolution();
+       
+      
     }
 }
